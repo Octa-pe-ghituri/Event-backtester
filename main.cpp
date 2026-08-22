@@ -516,7 +516,7 @@ private:
 };
 
 // luat de la Vlad - acelasi rol ca OrderCommand din codul lui Vlad.
-// Adaptat doar pentru tipurile tale + symbol pentru multiple Book-uri.
+// Adaptat doar pentru tipurile mele + symbol pentru multiple Book-uri.
 
 struct OrderCommand {
 
@@ -530,7 +530,7 @@ struct OrderCommand {
 };
 
 // luat de la Vlad - echivalentul parseEventType.
-// Adaptat la OrderType-ul tau.
+// Adaptat la OrderType-ul meu.
 OrderType ParseOrderType(const std::string &value) {
 
   if (value == "ADD")
