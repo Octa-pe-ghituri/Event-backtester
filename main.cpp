@@ -27,8 +27,10 @@ enum class ResponseEvents {
   OrderCancelled,
   OrderCancelFailed,
   OrderModified,
-  OrderModifyFailed
-
+  OrderModifyFailed,
+  OrderMarketFilled,
+  OrderMarketPartialFill,
+  OrderMarketFailed
 };
 
 struct Order { /// used by book
@@ -221,7 +223,8 @@ private:
         {removed->side, ResponseEvents::OrderModified, removed->order_id,
          removed->owner_id, Event.quantity, Event.price, Event.time}};
 
-    Order order_data = {Event.order_id,Event.owner_id,Event.side,Event.quantity,Event.price,Event.time};
+    Order order_data = {Event.order_id, Event.owner_id, Event.side,
+                        Event.quantity, Event.price,    Event.time};
 
     if (order_data.side == Side::Buy) {
       matchBuy(order_data, responses, Event.time);
@@ -253,15 +256,127 @@ private:
     return responses;
   }
 
-  /** ???????????????????????????????????????????????????????????????????
   std ::vector<OrderEvent> ProcessMarket(const BackTestEvent &Event) {
 
-    ///the exact same logic, but we don't care about the price, only to get the quantity
+    /// the exact same logic, but we don't care about the price, only to get the
+    /// quantity
 
+    std ::vector<OrderEvent> responses = {
+        {Event.side, ResponseEvents::OrderAccepted, Event.order_id,
+         Event.owner_id, Event.quantity, Event.price, Event.time}};
 
+    Order order_data = {Event.order_id, Event.owner_id, Event.side,
+                        Event.quantity, Event.price,    Event.time};
 
+    if (Event.side == Side::Buy) {
+
+      marketBuy(order_data, responses, Event.time);
+    } else { /// Sell
+
+      marketSell(order_data, responses, Event.time);
+    }
+
+    if (order_data.quantity == 0) {
+
+      responses.push_back({Event.side, ResponseEvents::OrderMarketFilled,
+                           Event.order_id, Event.owner_id, Event.quantity,
+                           Event.price, Event.time});
+    }
+
+    return responses;
   }
-  */
+
+  void marketBuy(Order &order, std ::vector<OrderEvent> &responses,
+                 const int &time) {
+
+    while (!asks.empty() && /**asks.begin()->first <= order.price &&*/
+           order.quantity > 0) {
+
+      auto it = asks.begin()->second.first;
+
+      int price = asks.begin()->first; /// we use the price of the SELL order
+
+      while (order.quantity > 0 && it != NULL) {
+
+        int delta = std ::min(order.quantity, it->quantity);
+
+        order.quantity -= delta;
+        it->quantity -= delta;
+
+        responses.push_back(Fill(order.order_id, order.owner_id, order.side,
+                                 order.quantity, delta, price, time));
+        responses.push_back(Fill(it->order_id, it->owner_id, Side::Sell,
+                                 it->quantity, delta, price, time));
+
+        if (it->quantity == 0) {
+
+          location.erase(it->order_id);
+          auto aux = it->nxt;
+          delete it;
+          it = aux;
+        }
+      }
+
+      /// change the first element
+      if (it != NULL) {
+        it->prev = NULL;
+        asks.begin()->second.first = it;
+      } else {
+
+        /// we ran out of orders than we delete the level
+
+        asks.erase(asks.begin());
+      }
+    }
+  }
+
+  void marketSell(Order &order, std ::vector<OrderEvent> &responses,
+                  const int &time) {
+
+    while (!bids.empty() && /**bids.rbegin()->first >= order.price &&*/
+           order.quantity > 0) {
+
+      auto it = bids.rbegin()->second.first;
+
+      int price = bids.rbegin()->first; /// we use the price of the SELL order
+
+      while (order.quantity > 0 && it != NULL) {
+
+        int delta = std ::min(order.quantity, it->quantity);
+
+        order.quantity -= delta;
+        it->quantity -= delta;
+
+        responses.push_back(Fill(order.order_id, order.owner_id,
+                                 order.side, /// SELL
+                                 order.quantity, delta, price, time));
+        responses.push_back(Fill(it->order_id, it->owner_id, Side::Buy,
+                                 it->quantity, delta, price, time));
+
+        if (it->quantity == 0) {
+
+          location.erase(it->order_id);
+          auto aux = it->nxt;
+          delete it;
+          it = aux;
+        }
+      }
+
+      /// change the first element
+      if (it != NULL) {
+        it->prev = NULL;
+        bids.rbegin()->second.first = it;
+      } else {
+
+        /// we ran out of orders : we delete the level
+        /// bids is 100% not empty, otherwise we would not have entered at while
+
+        auto it = prev(bids.end());
+
+        bids.erase(it);
+      }
+    }
+  }
 
   std::optional<Order> try_remove(const int &ID_ToBeRemoved,
                                   const int &owner_id) {
@@ -301,7 +416,8 @@ private:
     if (node == NULL)
       return std::nullopt;
 
-    // The order exists, but it does not belong to the owner that requested the cancellation.
+    // The order exists, but it does not belong to the owner that requested the
+    // cancellation.
     if (node->owner_id != owner_id)
       return std::nullopt;
 
@@ -374,8 +490,8 @@ private:
                                                  order.owner_id, order.price});
   }
 
-  std ::vector<OrderEvent>
-  matchBuy(Order &order, std ::vector<OrderEvent> &responses, const int &time) {
+  void matchBuy(Order &order, std ::vector<OrderEvent> &responses,
+                const int &time) {
 
     while (!asks.empty() && asks.begin()->first <= order.price &&
            order.quantity > 0) {
@@ -392,12 +508,12 @@ private:
         it->quantity -= delta;
 
         responses.push_back(Fill(order.order_id, order.owner_id, order.side,
-                                 order.quantity,delta, price, time));
+                                 order.quantity, delta, price, time));
         responses.push_back(Fill(it->order_id, it->owner_id, Side::Sell,
-                                 it->quantity,delta, price, time));
+                                 it->quantity, delta, price, time));
 
         if (it->quantity == 0) {
-          
+
           location.erase(it->order_id);
           auto aux = it->nxt;
           delete it;
@@ -416,13 +532,10 @@ private:
         asks.erase(asks.begin());
       }
     }
-
-    return responses;
   }
 
-  std ::vector<OrderEvent> matchSell(Order &order,
-                                     std ::vector<OrderEvent> &responses,
-                                     const int &time) {
+  void matchSell(Order &order, std ::vector<OrderEvent> &responses,
+                 const int &time) {
 
     while (!bids.empty() && bids.rbegin()->first >= order.price &&
            order.quantity > 0) {
@@ -440,9 +553,9 @@ private:
 
         responses.push_back(Fill(order.order_id, order.owner_id,
                                  order.side, /// SELL
-                                 order.quantity,delta, price, time));
+                                 order.quantity, delta, price, time));
         responses.push_back(Fill(it->order_id, it->owner_id, Side::Buy,
-                                 it->quantity,delta, price, time));
+                                 it->quantity, delta, price, time));
 
         if (it->quantity == 0) {
 
@@ -467,8 +580,6 @@ private:
         bids.erase(it);
       }
     }
-
-    return responses;
   }
 
   OrderEvent Fill(const int &order_id, const int &owner_id, const Side &side,
@@ -481,6 +592,21 @@ private:
       type = ResponseEvents::OrderPartialFilled;
     else
       type = ResponseEvents::OrderFilled;
+
+    return {side, type, order_id, owner_id, traded_quantity, price, time};
+  }
+
+  OrderEvent FillMarket(const int &order_id, const int &owner_id,
+                        const Side &side, const int &remaining_quantity,
+                        const int &traded_quantity, const int &price,
+                        const int &time) {
+
+    ResponseEvents type;
+
+    if (remaining_quantity > 0)
+      type = ResponseEvents::OrderMarketPartialFill;
+    else
+      type = ResponseEvents::OrderMarketFilled;
 
     return {side, type, order_id, owner_id, traded_quantity, price, time};
   }
@@ -753,10 +879,8 @@ public:
   const std::map<Symbol, Book> &books() const { return books_; }
 
 private:
-  
   void processEvent(const BackTestEvent &event) {
 
-    
     // Daca symbol-ul nu exista:
     //
     //      books_[event.symbol]
