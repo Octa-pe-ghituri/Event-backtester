@@ -142,8 +142,8 @@ public:
     if (Event.order_type == OrderType::IOC)
       return ProcessIOC(Event);
 
-    // if (Event.order_type == OrderType::Market)
-    // return ProcessMarket(Event);
+     if (Event.order_type == OrderType::Market)
+       return ProcessMarket(Event);
 
     return {};
   }
