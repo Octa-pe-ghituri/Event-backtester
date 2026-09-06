@@ -2,6 +2,8 @@
 build/
 build-*/
 cmake-build-*/
+data/*
+!data/lesson07_simulation_events_adapted.txt
 
 # C/C++ build artifacts
 *.o

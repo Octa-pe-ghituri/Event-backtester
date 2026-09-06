@@ -11,15 +11,15 @@ int main() {
 
   Backtest backtest(
 
-      "data/historical_events.txt",
+      "data/lesson07_simulation_events_adapted.txt",
 
       std::move(strategy),
 
-      10,
+      359,
 
-      1,
+      0,
 
-      1);
+      1, 0.05);
 
   backtest.run();
 

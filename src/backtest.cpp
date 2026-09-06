@@ -10,9 +10,11 @@
 #include <vector>
 
 Backtest::Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy,
-                   int maxTime, int strategyLatency, int strategyOwnerId)
+                   int maxTime, int strategyLatency, int strategyOwnerId,
+                   double feeTicks)
     : maxTime_(maxTime), strategyLatency_(strategyLatency),
-      strategyOwnerId_(strategyOwnerId), strategy_(std::move(strategy)) {
+      strategyOwnerId_(strategyOwnerId), portfolio_(feeTicks),
+      strategy_(std::move(strategy)) {
 
   if (strategy_ == nullptr) {
 
@@ -87,12 +89,46 @@ void Backtest::run() {
 
 void Backtest::printSummary() const {
 
+  double equity = static_cast<double>(portfolio_.cash());
+
   std::cout << "cash=" << portfolio_.cash() << "\n";
 
   for (const auto &entry : portfolio_.positions()) {
 
-    std::cout << "position[" << entry.first << "]=" << entry.second << "\n";
+    const Symbol &symbol = entry.first;
+    long long position = entry.second;
+
+    std::cout << "position[" << symbol << "]=" << position;
+
+    auto bookIt = books_.find(symbol);
+
+    if (bookIt == books_.end()) {
+
+      std::cout << " mark=unavailable\n";
+      continue;
+    }
+
+    std::optional<TopOfBook> top = bookIt->second.topOfBook();
+
+    if (!top.has_value()) {
+
+      std::cout << " mark=unavailable\n";
+      continue;
+    }
+
+    double mark = (static_cast<double>(top->best_bid) +
+                   static_cast<double>(top->best_ask)) /
+                  2.0;
+
+    double positionValue = static_cast<double>(position) * mark;
+
+    equity += positionValue;
+
+    std::cout << " mark=" << mark << " value=" << positionValue << "\n";
   }
+
+  std::cout << "equity=" << equity << "\n";
+  std::cout << "finalPnlTicks=" << equity << "\n";
 }
 
 // pentru ca mai tarziu sa pot inspecta toate

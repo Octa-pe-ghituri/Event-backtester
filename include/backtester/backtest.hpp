@@ -15,7 +15,8 @@ class Backtest {
 
 public:
   Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy,
-           int maxTime, int strategyLatency, int strategyOwnerId);
+           int maxTime, int strategyLatency, int strategyOwnerId,
+           double feeTicks = 0.0);
 
   void run();
 
