@@ -2,6 +2,7 @@
 #include "backtester/event_queue.hpp"
 #include "backtester/io.hpp"
 #include "backtester/portfolio.hpp"
+#include "backtester/strategy.hpp"
 #include "backtester/types.hpp"
 #include <cassert>
 #include <iostream> // luat de la Vlad
@@ -12,81 +13,7 @@
 #include <string>
 #include <utility> // luat de la Vlad
 #include <vector>
-struct OrderCommand {
 
-  Symbol symbol;
-  OrderType order_type = OrderType::Add;
-
-  int order_id = 0;
-  Side side = Side::Buy;
-  int quantity = 0;
-  int price = 0;
-};
-
-// luat de la Vlad - loadEventsFromFile.
-// Adaptat pentru multiple simboluri.
-//
-// FORMAT FISIER:
-//
-// time SYMBOL TYPE order_id owner_id SIDE quantity price
-//
-// exemplu:
-// 0 AAPL ADD 1001 2 BUY 10 10000
-//
-
-// eu am:
-//
-//      const std::map<Symbol, Book>& books
-//
-// fiindca Backtest-ul suporta mai multe simboluri.
-class Strategy {
-
-public:
-  virtual ~Strategy() = default;
-
-  virtual std::optional<OrderCommand> onTimeMove(
-
-      int now,
-
-      const std::map<Symbol, Book> &books,
-
-      const Portfolio &portfolio,
-
-      const std::vector<OrderEvent> &recentEvents
-
-      ) = 0;
-};
-
-// luat de la Vlad aproape 1 la 1.
-// Singura diferenta este parametrul books.
-class DoNothingStrategy : public Strategy {
-
-public:
-  std::optional<OrderCommand> onTimeMove(
-
-      int now,
-
-      const std::map<Symbol, Book> &books,
-
-      const Portfolio &portfolio,
-
-      const std::vector<OrderEvent> &recentEvents
-
-      ) override {
-
-    (void)now;
-    (void)books;
-    (void)portfolio;
-    (void)recentEvents;
-
-    return std::nullopt;
-  }
-};
-
-// luat de la Vlad.
-//
-//      std::map<Symbol, Book> books_;
-//
 class Backtest {
 
 public:
