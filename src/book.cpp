@@ -138,7 +138,7 @@ std::vector<OrderEvent> Book::ProcessMarket(const BackTestEvent &Event) {
 
   if (order_data.quantity == 0) {
 
-    responses.push_back({Event.side, ResponseEvents::OrderMarketFilled,
+    responses.push_back({Event.side, ResponseEvents::OrderFilled,
                          Event.order_id, Event.owner_id, Event.quantity,
                          Event.price, Event.time});
   }
@@ -496,9 +496,9 @@ OrderEvent Book::FillMarket(const int &order_id, const int &owner_id,
   ResponseEvents type;
 
   if (remaining_quantity > 0)
-    type = ResponseEvents::OrderMarketPartialFill;
+    type = ResponseEvents::OrderPartialFilled;
   else
-    type = ResponseEvents::OrderMarketFilled;
+    type = ResponseEvents::OrderFilled;
 
   return {side, type, order_id, owner_id, traded_quantity, price, time};
 }
