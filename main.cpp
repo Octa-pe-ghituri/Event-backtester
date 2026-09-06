@@ -1,5 +1,6 @@
 #include "backtester/book.hpp"
 #include "backtester/event_queue.hpp"
+#include "backtester/portfolio.hpp"
 #include "backtester/types.hpp"
 #include <cassert>
 #include <fstream>  // luat de la Vlad
@@ -11,39 +12,6 @@
 #include <string>
 #include <utility> // luat de la Vlad
 #include <vector>
-
-class Portfolio {
-public:
-  void apply(const OrderEvent &event) {
-    if (event.type != ResponseEvents::OrderFilled &&
-        event.type != ResponseEvents::OrderPartialFilled) {
-      return;
-    }
-
-    if (event.side == Side::Buy) {
-      cash_ -= event.quantity * event.price;
-      position_ += event.quantity;
-    } else {
-      cash_ += event.quantity * event.price;
-      position_ -= event.quantity;
-    }
-
-    exposure_ = position_ * event.price;
-  }
-
-  long long cash() const { return cash_; }
-  long long position() const { return position_; }
-  long long exposure() const { return exposure_; }
-
-private:
-  long long cash_{0};
-  long long position_{0};
-  long long exposure_{0};
-};
-
-// luat de la Vlad - acelasi rol ca OrderCommand din codul lui Vlad.
-// Adaptat doar pentru tipurile mele + symbol pentru multiple Book-uri.
-
 struct OrderCommand {
 
   Symbol symbol;
