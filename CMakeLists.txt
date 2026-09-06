@@ -14,6 +14,7 @@ add_executable(event_backtester
     src/book.cpp
     src/io.cpp
     src/portfolio.cpp
+    src/fair_price_strategy.cpp
 )
 
 target_include_directories(event_backtester PRIVATE

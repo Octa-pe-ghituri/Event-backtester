@@ -32,6 +32,45 @@ void Book::clearLevels(std::map<int, Location_Rest> &levels) {
   levels.clear();
 }
 
+std::optional<TopOfBook> Book::topOfBook() const {
+
+  if (bids.empty() || asks.empty()) {
+
+    return std::nullopt;
+  }
+
+  auto bestBidIt = bids.rbegin();
+  auto bestAskIt = asks.begin();
+
+  long long bestBidQuantity = levelQuantity(bestBidIt->second.first);
+
+  long long bestAskQuantity = levelQuantity(bestAskIt->second.first);
+
+  if (bestBidQuantity <= 0 || bestAskQuantity <= 0) {
+
+    return std::nullopt;
+  }
+
+  return TopOfBook{bestBidIt->first, bestBidQuantity, bestAskIt->first,
+                   bestAskQuantity};
+}
+
+long long Book::levelQuantity(LevelNode *first) const {
+
+  long long quantity = 0;
+
+  LevelNode *node = first;
+
+  while (node != nullptr) {
+
+    quantity += node->quantity;
+
+    node = node->nxt;
+  }
+
+  return quantity;
+}
+
 std::vector<OrderEvent> Book::ProcessOrder(const BackTestEvent &Event) {
 
   if (Event.order_type == OrderType::Add)

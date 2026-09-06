@@ -7,6 +7,15 @@
 #include <unordered_map>
 #include <vector>
 
+struct TopOfBook {
+
+  int best_bid = 0;
+  long long best_bid_quantity = 0;
+
+  int best_ask = 0;
+  long long best_ask_quantity = 0;
+};
+
 class Book {
 
 public:
@@ -19,6 +28,8 @@ public:
 
   Book(Book &&) = delete;
   Book &operator=(Book &&) = delete;
+
+  std::optional<TopOfBook> topOfBook() const;
 
   std::vector<OrderEvent> ProcessOrder(const BackTestEvent &Event);
 
@@ -57,6 +68,8 @@ private:
   std::map<int, Location_Rest> asks;
 
   std::unordered_map<int, Location_ID> location;
+
+  long long levelQuantity(LevelNode *first) const;
 
   std::vector<OrderEvent> ProcessAdd(const BackTestEvent &Event);
 
