@@ -19,35 +19,61 @@ Backtest::Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy,
     throw std::invalid_argument("strategy must not be null");
   }
 
+  if (maxTime_ < 0) {
+
+    throw std::invalid_argument("maxTime must not be negative");
+  }
+
+  if (strategyLatency_ < 0) {
+
+    throw std::invalid_argument("strategyLatency must not be negative");
+  }
+
+  if (strategyOwnerId_ < 0) {
+
+    throw std::invalid_argument("strategyOwnerId must not be negative");
+  }
+
   for (const BackTestEvent &event : LoadEventsFromFile(eventsPath)) {
 
     eventQueue_.AddEvent(event);
   }
 }
 
-// luat de la Vlad
+void Backtest::processDueEvents() {
+
+  std::vector<BackTestEvent> dueEvents = eventQueue_.GetEvents(now_);
+
+  for (const BackTestEvent &event : dueEvents) {
+
+    processEvent(event);
+  }
+}
+
 void Backtest::run() {
 
-  while (now_ <= maxTime_ && !eventQueue_.IsEmpty()) {
+  while (now_ <= maxTime_) {
 
-    std::vector<BackTestEvent> dueEvents = eventQueue_.GetEvents(now_);
+    processDueEvents();
 
-    for (const BackTestEvent &event : dueEvents) {
-
-      processEvent(event);
-    }
-
-    // luat de la Vlad
     std::optional<OrderCommand> command = strategy_->onTimeMove(
         now_, books_, portfolio_, strategyEventsThisTick_);
+
+    // Strategy tocmai a consumat evenimentele primite.
+    strategyEventsThisTick_.clear();
 
     if (command.has_value()) {
 
       scheduleCommand(*command);
-    }
 
-    // luat de la Vlad
-    strategyEventsThisTick_.clear();
+      // Daca latency este 0, ordinul trebuie sa devina
+      // activ chiar la timpul now_.
+      //
+      // Strategy si-a luat deja decizia pentru acest tick,
+      // deci fills-urile rezultate vor fi vazute la
+      // urmatoarea apelare onTimeMove().
+      processDueEvents();
+    }
 
     now_++;
   }

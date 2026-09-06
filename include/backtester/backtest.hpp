@@ -26,6 +26,10 @@ public:
   const std::map<Symbol, Book> &books() const;
 
 private:
+  int nextStrategyOrderId_{1000000};
+
+  void processDueEvents();
+
   void processEvent(const BackTestEvent &event);
 
   void scheduleCommand(const OrderCommand &command);
