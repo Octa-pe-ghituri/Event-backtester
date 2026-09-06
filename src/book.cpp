@@ -3,6 +3,34 @@
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
+#include <stdexcept>
+
+Book::~Book() {
+
+  clearLevels(bids);
+  clearLevels(asks);
+
+  location.clear();
+}
+
+void Book::clearLevels(std::map<int, Location_Rest> &levels) {
+
+  for (auto &entry : levels) {
+
+    LevelNode *node = entry.second.first;
+
+    while (node != nullptr) {
+
+      LevelNode *next = node->nxt;
+
+      delete node;
+
+      node = next;
+    }
+  }
+
+  levels.clear();
+}
 
 std::vector<OrderEvent> Book::ProcessOrder(const BackTestEvent &Event) {
 
@@ -25,6 +53,12 @@ std::vector<OrderEvent> Book::ProcessOrder(const BackTestEvent &Event) {
 }
 
 std::vector<OrderEvent> Book::ProcessAdd(const BackTestEvent &Event) {
+
+  if (location.find(Event.order_id) != location.end()) {
+
+    return {{Event.side, ResponseEvents::OrderRejected, Event.order_id,
+             Event.owner_id, Event.quantity, Event.price, Event.time}};
+  }
 
   std::vector<OrderEvent> responses = {
       {Event.side, ResponseEvents::OrderAccepted, Event.order_id,
@@ -324,6 +358,11 @@ std::optional<Order> Book::removeFromSide(std::map<int, Location_Rest> &Level,
 }
 
 void Book::rest_order(const Order &order) {
+
+  if (location.find(order.order_id) != location.end()) {
+
+    throw std::logic_error("attempted to rest duplicate active order id");
+  }
 
   if (order.side == Side::Buy) {
 

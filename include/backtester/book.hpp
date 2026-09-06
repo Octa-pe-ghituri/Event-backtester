@@ -10,6 +10,16 @@
 class Book {
 
 public:
+  Book() = default;
+
+  ~Book();
+
+  Book(const Book &) = delete;
+  Book &operator=(const Book &) = delete;
+
+  Book(Book &&) = delete;
+  Book &operator=(Book &&) = delete;
+
   std::vector<OrderEvent> ProcessOrder(const BackTestEvent &Event);
 
 private:
@@ -40,6 +50,8 @@ private:
     LevelNode *first;
     LevelNode *last;
   };
+
+  void clearLevels(std::map<int, Location_Rest> &levels);
 
   std::map<int, Location_Rest> bids;
   std::map<int, Location_Rest> asks;
