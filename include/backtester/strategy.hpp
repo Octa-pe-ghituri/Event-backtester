@@ -31,7 +31,7 @@ public:
   virtual std::optional<OrderCommand>
   onTimeMove(int now, const std::map<Symbol, Book> &books,
              const Portfolio &portfolio,
-             const std::vector<OrderEvent> &recentEvents) = 0;
+             const std::vector<StrategyEvent> &recentEvents) = 0;
 };
 
 class DoNothingStrategy : public Strategy {
@@ -40,7 +40,7 @@ public:
   std::optional<OrderCommand>
   onTimeMove(int now, const std::map<Symbol, Book> &books,
              const Portfolio &portfolio,
-             const std::vector<OrderEvent> &recentEvents) override {
+             const std::vector<StrategyEvent> &recentEvents) override {
 
     (void)now;
     (void)books;

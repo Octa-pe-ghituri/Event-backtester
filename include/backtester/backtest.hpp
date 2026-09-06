@@ -47,7 +47,7 @@ private:
   EventQueue<BackTestEvent> eventQueue_;
 
   // luat de la Vlad
-  std::vector<OrderEvent> strategyEventsThisTick_;
+  std::vector<StrategyEvent> strategyEventsThisTick_;
 
   // luat de la Vlad
   std::unique_ptr<Strategy> strategy_;

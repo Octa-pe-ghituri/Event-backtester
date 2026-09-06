@@ -1,6 +1,7 @@
 #include "backtester/backtest.hpp"
 
 #include "backtester/io.hpp"
+#include "backtester/types.hpp"
 
 #include <iostream>
 #include <optional>
@@ -52,12 +53,14 @@ void Backtest::run() {
   }
 }
 
-// luat de la Vlad
 void Backtest::printSummary() const {
 
-  std::cout << "cash=" << portfolio_.cash()
-            << " position=" << portfolio_.position()
-            << " exposure=" << portfolio_.exposure() << "\n";
+  std::cout << "cash=" << portfolio_.cash() << "\n";
+
+  for (const auto &entry : portfolio_.positions()) {
+
+    std::cout << "position[" << entry.first << "]=" << entry.second << "\n";
+  }
 }
 
 // pentru ca mai tarziu sa pot inspecta toate
@@ -90,9 +93,11 @@ void Backtest::processEvent(const BackTestEvent &event) {
     // luat de la Vlad
     if (response.owner_id == strategyOwnerId_) {
 
-      strategyEventsThisTick_.push_back(response);
+      StrategyEvent strategyEvent{event.symbol, response};
 
-      portfolio_.apply(response);
+      strategyEventsThisTick_.push_back(strategyEvent);
+
+      portfolio_.apply(strategyEvent);
     }
   }
 }

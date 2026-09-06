@@ -10,58 +10,61 @@ enum class OrderType { Add, Cancel, Mod, Market, IOC };
 
 enum class ResponseEvents {
   OrderAccepted,
+  OrderRejected,
+
   OrderFilled,
   OrderPartialFilled,
+
   OrderCancelled,
   OrderCancelFailed,
+
   OrderModified,
   OrderModifyFailed,
-  OrderMarketFilled,
-  OrderMarketPartialFill,
-  OrderMarketFailed
+
+  OrderExpired
 };
 
-struct Order { /// used by book
-  const int order_id = 0;
-  const int owner_id = 0;
-  const Side side = Side::Buy;
+struct Order {
+  int order_id = 0;
+  int owner_id = 0;
+
+  Side side = Side::Buy;
 
   int quantity = 0;
   int price = 0;
 
-  const int time = 0;
+  int time = 0;
 };
 
-struct BackTestEvent { /// used by the back tester
+struct BackTestEvent {
   Symbol symbol;
-  Side side;
-  OrderType order_type;
 
-  int order_id;
-  int owner_id;
-  int quantity;
-  int price;
-  int time;
+  Side side = Side::Buy;
+  OrderType order_type = OrderType::Add;
+
+  int order_id = 0;
+  int owner_id = 0;
+
+  int quantity = 0;
+  int price = 0;
+
+  int time = 0;
 };
 
-struct OrderEvent { /// used to return FROM THE BOOK the events that took place
-                    /// while processing a order
-  Side side;
-  ResponseEvents type;
+struct OrderEvent {
+  Side side = Side::Buy;
+  ResponseEvents type = ResponseEvents::OrderAccepted;
 
-  const int order_id;
-  const int owner_id;
-  int quantity;
-  int price;
-  const int time;
+  int order_id = 0;
+  int owner_id = 0;
+
+  int quantity = 0;
+  int price = 0;
+
+  int time = 0;
 };
 
-struct Fill {
+struct StrategyEvent {
   Symbol symbol;
-  Side side;
-
-  const int id;
-  const int quantity;
-  const int price;
-  const int time;
+  OrderEvent event;
 };
