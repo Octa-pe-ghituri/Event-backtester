@@ -1,9 +1,5 @@
 #include "backtester/backtest.hpp"
 #include "backtester/strategy.hpp"
-#include <cassert>
-#include <memory>
-#include <string>
-#include <utility>
 
 int main() {
 

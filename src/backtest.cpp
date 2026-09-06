@@ -36,6 +36,12 @@ Backtest::Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy,
 
   for (const BackTestEvent &event : LoadEventsFromFile(eventsPath)) {
 
+    if (event.owner_id == strategyOwnerId_) {
+
+      throw std::invalid_argument(
+          "historical event uses reserved strategy owner id");
+    }
+
     eventQueue_.AddEvent(event);
   }
 }
@@ -130,8 +136,36 @@ void Backtest::processEvent(const BackTestEvent &event) {
 
 void Backtest::scheduleCommand(const OrderCommand &command) {
 
+  int orderId = command.order_id;
+
+  bool isNewOrder = command.order_type == OrderType::Add ||
+                    command.order_type == OrderType::IOC ||
+                    command.order_type == OrderType::Market;
+
+  if (isNewOrder) {
+
+    if (orderId == 0) {
+
+      orderId = nextStrategyOrderId_;
+
+      nextStrategyOrderId_++;
+    }
+
+    if (orderId < 0) {
+
+      throw std::invalid_argument("new order id must be positive");
+    }
+
+  } else {
+
+    if (orderId <= 0) {
+
+      throw std::invalid_argument("cancel/modify requires a valid order id");
+    }
+  }
+
   BackTestEvent event{command.symbol,     command.side,
-                      command.order_type, command.order_id,
+                      command.order_type, orderId,
                       strategyOwnerId_,   command.quantity,
                       command.price,      now_ + strategyLatency_};
 

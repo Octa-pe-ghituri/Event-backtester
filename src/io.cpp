@@ -77,5 +77,10 @@ std::vector<BackTestEvent> LoadEventsFromFile(const std::string &path) {
                       orderId, ownerId, quantity, price, time});
   }
 
+  if (!input.eof()) {
+
+    throw std::runtime_error("malformed events file: " + path);
+  }
+
   return events;
 }

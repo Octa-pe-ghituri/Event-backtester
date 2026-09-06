@@ -310,9 +310,9 @@ void Book::marketSell(Order &order, std::vector<OrderEvent> &responses,
       /// bids is 100% not empty, otherwise we would not have entered
       /// the while
 
-      auto it = std::prev(bids.end());
+      auto lastLevelIt = std::prev(bids.end());
 
-      bids.erase(it);
+      bids.erase(lastLevelIt);
     }
   }
 }
@@ -538,9 +538,9 @@ void Book::matchSell(Order &order, std::vector<OrderEvent> &responses,
       /// bids is 100% not empty, otherwise we would not have entered
       /// the while
 
-      auto it = std::prev(bids.end());
+      auto lastLevelIt = std::prev(bids.end());
 
-      bids.erase(it);
+      bids.erase(lastLevelIt);
     }
   }
 }
