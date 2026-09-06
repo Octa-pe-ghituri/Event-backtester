@@ -3,6 +3,8 @@
 #include <fstream>
 #include <stdexcept>
 
+// review: i get that credit is nice, but maybe don't put it 3 times in a row in the same file
+
 // luat de la Vlad - echivalentul parseEventType.
 // Adaptat la OrderType-ul meu.
 OrderType ParseOrderType(const std::string &value) {

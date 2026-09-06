@@ -6,6 +6,9 @@
 // 0 AAPL ADD 1001 2 BUY 10 10000
 //
 
+// review: each column should have a small description of what it is, how time should be formatted for example
+// p.s: maybe try to use csv instead of txt, easier to read and parse
+
 #pragma once
 
 #include "backtester/types.hpp"

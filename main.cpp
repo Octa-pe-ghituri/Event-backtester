@@ -1,4 +1,5 @@
 #include "backtester/backtest.hpp"
+// review: why is this here if not used?
 // #include "backtester/strategy.hpp"
 #include "backtester/fair_price_strategy.hpp"
 
@@ -9,6 +10,7 @@ int main() {
 
   auto strategy = std::make_unique<FairPriceStrategy>(strategyConfig);
 
+  // review: wierd spacing/indenting
   Backtest backtest(
 
       "data/lesson07_simulation_events_adapted.txt",

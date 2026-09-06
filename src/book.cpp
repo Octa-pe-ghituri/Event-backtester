@@ -61,6 +61,7 @@ long long Book::levelQuantity(LevelNode *first) const {
 
   LevelNode *node = first;
 
+  // review: wierd spacing/indenting
   while (node != nullptr) {
 
     quantity += node->quantity;
@@ -93,6 +94,7 @@ std::vector<OrderEvent> Book::ProcessOrder(const BackTestEvent &Event) {
 
 std::vector<OrderEvent> Book::ProcessAdd(const BackTestEvent &Event) {
 
+  // review: compare this if with the one at the bottom of this function. Why is the first line blank in this one and not in the other?
   if (location.find(Event.order_id) != location.end()) {
 
     return {{Event.side, ResponseEvents::OrderRejected, Event.order_id,

@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-struct TopOfBook {
+struct TopOfBook { // review: why is this empty line here? (below) i see it is consistent with the other files, but why?
 
   int best_bid = 0;
   long long best_bid_quantity = 0;
@@ -16,7 +16,7 @@ struct TopOfBook {
   long long best_ask_quantity = 0;
 };
 
-class Book {
+class Book { // review: more of a personal prefrence but indent the public/private section for more clarity
 
 public:
   Book() = default;

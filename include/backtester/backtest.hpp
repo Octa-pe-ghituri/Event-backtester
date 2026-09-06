@@ -12,48 +12,50 @@
 #include <vector>
 
 class Backtest {
+  // review: more of a personal prefrence but indent the public/private section for more clarity
+  // like this!
+  public:
+    Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy,
+            int maxTime, int strategyLatency, int strategyOwnerId,
+            double feeTicks = 0.0);
 
-public:
-  Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy,
-           int maxTime, int strategyLatency, int strategyOwnerId,
-           double feeTicks = 0.0);
+    void run();
 
-  void run();
+    void printSummary() const;
 
-  void printSummary() const;
+    // pentru ca mai tarziu sa pot inspecta toate
+    // book-urile din Strategy/tester.
+    const std::map<Symbol, Book> &books() const;
 
-  // pentru ca mai tarziu sa pot inspecta toate
-  // book-urile din Strategy/tester.
-  const std::map<Symbol, Book> &books() const;
+  private:
+    int nextStrategyOrderId_{1000000};
 
-private:
-  int nextStrategyOrderId_{1000000};
+    void processDueEvents();
 
-  void processDueEvents();
+    void processEvent(const BackTestEvent &event);
 
-  void processEvent(const BackTestEvent &event);
+    void scheduleCommand(const OrderCommand &command);
 
-  void scheduleCommand(const OrderCommand &command);
+    // review: i get that credit is nice, but maybe don't put it 4 times in a row
+    // luat de la Vlad
+    int now_{0};
 
-  // luat de la Vlad
-  int now_{0};
+    int maxTime_{0};
 
-  int maxTime_{0};
+    int strategyLatency_{1};
 
-  int strategyLatency_{1};
+    int strategyOwnerId_{1};
 
-  int strategyOwnerId_{1};
+    std::map<Symbol, Book> books_;
 
-  std::map<Symbol, Book> books_;
+    // luat de la Vlad
+    Portfolio portfolio_;
 
-  // luat de la Vlad
-  Portfolio portfolio_;
+    EventQueue<BackTestEvent> eventQueue_;
 
-  EventQueue<BackTestEvent> eventQueue_;
+    // luat de la Vlad
+    std::vector<StrategyEvent> strategyEventsThisTick_;
 
-  // luat de la Vlad
-  std::vector<StrategyEvent> strategyEventsThisTick_;
-
-  // luat de la Vlad
-  std::unique_ptr<Strategy> strategy_;
+    // luat de la Vlad
+    std::unique_ptr<Strategy> strategy_;
 };
