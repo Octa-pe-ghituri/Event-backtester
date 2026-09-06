@@ -96,9 +96,4 @@ private:
   OrderEvent Fill(const int &order_id, const int &owner_id, const Side &side,
                   const int &remaining_quantity, const int &traded_quantity,
                   const int &price, const int &time);
-
-  OrderEvent FillMarket(const int &order_id, const int &owner_id,
-                        const Side &side, const int &remaining_quantity,
-                        const int &traded_quantity, const int &price,
-                        const int &time);
 };

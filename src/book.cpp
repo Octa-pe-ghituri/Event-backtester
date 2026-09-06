@@ -98,6 +98,22 @@ std::vector<OrderEvent> Book::ProcessCancel(const BackTestEvent &Event) {
 
 std::vector<OrderEvent> Book::ProcessMod(const BackTestEvent &Event) {
 
+  if (Event.quantity <= 0 || Event.price <= 0) {
+
+    return {{Event.side, ResponseEvents::OrderModifyFailed, Event.order_id,
+             Event.owner_id, Event.quantity, Event.price, Event.time}};
+  }
+
+  auto locationIt = location.find(Event.order_id);
+
+  if (locationIt == location.end() ||
+      locationIt->second.owner_id != Event.owner_id ||
+      locationIt->second.side != Event.side) {
+
+    return {{Event.side, ResponseEvents::OrderModifyFailed, Event.order_id,
+             Event.owner_id, Event.quantity, Event.price, Event.time}};
+  }
+
   std::optional<Order> removed = try_remove(Event.order_id, Event.owner_id);
 
   if (!removed.has_value()) {
@@ -110,8 +126,8 @@ std::vector<OrderEvent> Book::ProcessMod(const BackTestEvent &Event) {
       {removed->side, ResponseEvents::OrderModified, removed->order_id,
        removed->owner_id, Event.quantity, Event.price, Event.time}};
 
-  Order order_data = {Event.order_id, Event.owner_id, Event.side,
-                      Event.quantity, Event.price,    Event.time};
+  Order order_data = {removed->order_id, removed->owner_id, removed->side,
+                      Event.quantity,    Event.price,       Event.time};
 
   if (order_data.side == Side::Buy) {
 
@@ -130,6 +146,13 @@ std::vector<OrderEvent> Book::ProcessMod(const BackTestEvent &Event) {
 
 std::vector<OrderEvent> Book::ProcessIOC(const BackTestEvent &Event) {
 
+  if (Event.quantity <= 0 || Event.price <= 0 ||
+      location.find(Event.order_id) != location.end()) {
+
+    return {{Event.side, ResponseEvents::OrderRejected, Event.order_id,
+             Event.owner_id, Event.quantity, Event.price, Event.time}};
+  }
+
   std::vector<OrderEvent> responses = {
       {Event.side, ResponseEvents::OrderAccepted, Event.order_id,
        Event.owner_id, Event.quantity, Event.price, Event.time}};
@@ -146,13 +169,23 @@ std::vector<OrderEvent> Book::ProcessIOC(const BackTestEvent &Event) {
     matchSell(order_data, responses, Event.time);
   }
 
+  if (order_data.quantity > 0) {
+
+    responses.push_back({Event.side, ResponseEvents::OrderExpired,
+                         Event.order_id, Event.owner_id, order_data.quantity,
+                         Event.price, Event.time});
+  }
+
   return responses;
 }
 
 std::vector<OrderEvent> Book::ProcessMarket(const BackTestEvent &Event) {
 
-  /// the exact same logic, but we don't care about the price,
-  /// only to get the quantity
+  if (Event.quantity <= 0 || location.find(Event.order_id) != location.end()) {
+
+    return {{Event.side, ResponseEvents::OrderRejected, Event.order_id,
+             Event.owner_id, Event.quantity, Event.price, Event.time}};
+  }
 
   std::vector<OrderEvent> responses = {
       {Event.side, ResponseEvents::OrderAccepted, Event.order_id,
@@ -170,10 +203,10 @@ std::vector<OrderEvent> Book::ProcessMarket(const BackTestEvent &Event) {
     marketSell(order_data, responses, Event.time);
   }
 
-  if (order_data.quantity == 0) {
+  if (order_data.quantity > 0) {
 
-    responses.push_back({Event.side, ResponseEvents::OrderFilled,
-                         Event.order_id, Event.owner_id, Event.quantity,
+    responses.push_back({Event.side, ResponseEvents::OrderExpired,
+                         Event.order_id, Event.owner_id, order_data.quantity,
                          Event.price, Event.time});
   }
 
@@ -516,21 +549,6 @@ OrderEvent Book::Fill(const int &order_id, const int &owner_id,
                       const Side &side, const int &remaining_quantity,
                       const int &traded_quantity, const int &price,
                       const int &time) {
-
-  ResponseEvents type;
-
-  if (remaining_quantity > 0)
-    type = ResponseEvents::OrderPartialFilled;
-  else
-    type = ResponseEvents::OrderFilled;
-
-  return {side, type, order_id, owner_id, traded_quantity, price, time};
-}
-
-OrderEvent Book::FillMarket(const int &order_id, const int &owner_id,
-                            const Side &side, const int &remaining_quantity,
-                            const int &traded_quantity, const int &price,
-                            const int &time) {
 
   ResponseEvents type;
 
