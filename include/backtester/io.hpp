@@ -1,3 +1,11 @@
+// FORMAT FISIER:
+//
+// time SYMBOL TYPE order_id owner_id SIDE quantity price
+//
+// exemplu:
+// 0 AAPL ADD 1001 2 BUY 10 10000
+//
+
 #pragma once
 
 #include "backtester/types.hpp"
