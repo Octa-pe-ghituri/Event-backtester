@@ -12,6 +12,10 @@ add_executable(event_backtester
     main.cpp
 )
 
+target_include_directories(event_backtester PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(event_backtester PRIVATE
         -Wall
