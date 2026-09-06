@@ -1,0 +1,19 @@
+# CMake
+build/
+cmake-build-*/
+
+# C/C++ build artifacts
+*.o
+*.obj
+*.out
+
+# Executables
+event_backtester
+
+# Python - pentru etapa ML
+__pycache__/
+*.pyc
+.venv/
+
+# OS junk
+.DS_Store
