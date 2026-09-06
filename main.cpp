@@ -1,9 +1,9 @@
 #include "backtester/book.hpp"
 #include "backtester/event_queue.hpp"
+#include "backtester/io.hpp"
 #include "backtester/portfolio.hpp"
 #include "backtester/types.hpp"
 #include <cassert>
-#include <fstream>  // luat de la Vlad
 #include <iostream> // luat de la Vlad
 #include <map>
 #include <memory> // luat de la Vlad
@@ -23,40 +23,6 @@ struct OrderCommand {
   int price = 0;
 };
 
-// luat de la Vlad - echivalentul parseEventType.
-// Adaptat la OrderType-ul meu.
-OrderType ParseOrderType(const std::string &value) {
-
-  if (value == "ADD")
-    return OrderType::Add;
-
-  if (value == "CANCEL")
-    return OrderType::Cancel;
-
-  if (value == "MODIFY" || value == "MOD")
-    return OrderType::Mod;
-
-  if (value == "IOC")
-    return OrderType::IOC;
-
-  if (value == "MARKET")
-    return OrderType::Market;
-
-  throw std::invalid_argument("unknown order type: " + value);
-}
-
-// luat de la Vlad
-Side ParseSide(const std::string &value) {
-
-  if (value == "BUY")
-    return Side::Buy;
-
-  if (value == "SELL")
-    return Side::Sell;
-
-  throw std::invalid_argument("unknown side: " + value);
-}
-
 // luat de la Vlad - loadEventsFromFile.
 // Adaptat pentru multiple simboluri.
 //
@@ -67,40 +33,7 @@ Side ParseSide(const std::string &value) {
 // exemplu:
 // 0 AAPL ADD 1001 2 BUY 10 10000
 //
-std::vector<BackTestEvent> LoadEventsFromFile(const std::string &path) {
 
-  std::ifstream input(path);
-
-  if (!input) {
-
-    throw std::runtime_error("could not open events file: " + path);
-  }
-
-  std::vector<BackTestEvent> events;
-
-  int time;
-  Symbol symbol;
-  std::string typeText;
-
-  int orderId;
-  int ownerId;
-
-  std::string sideText;
-
-  int quantity;
-  int price;
-
-  while (input >> time >> symbol >> typeText >> orderId >> ownerId >>
-         sideText >> quantity >> price) {
-
-    events.push_back({symbol, ParseSide(sideText), ParseOrderType(typeText),
-                      orderId, ownerId, quantity, price, time});
-  }
-
-  return events;
-}
-
-// luat de la Vlad.
 // eu am:
 //
 //      const std::map<Symbol, Book>& books
@@ -179,14 +112,11 @@ public:
 
         strategy_(std::move(strategy)) {
 
-    // luat de la Vlad
     if (strategy_ == nullptr) {
 
       throw std::invalid_argument("strategy must not be null");
     }
 
-    // luat de la Vlad
-    // adaptat doar la numele tau EventQueue::AddEvent.
     for (const BackTestEvent &event : LoadEventsFromFile(eventsPath)) {
 
       eventQueue_.AddEvent(event);

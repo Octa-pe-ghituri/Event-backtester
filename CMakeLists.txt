@@ -12,6 +12,7 @@ add_executable(event_backtester
     main.cpp
     src/book.cpp
     src/portfolio.cpp
+    src/io.cpp
 )
 
 target_include_directories(event_backtester PRIVATE
