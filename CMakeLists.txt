@@ -10,9 +10,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(event_backtester
     main.cpp
+    src/backtest.cpp
     src/book.cpp
-    src/portfolio.cpp
     src/io.cpp
+    src/portfolio.cpp
 )
 
 target_include_directories(event_backtester PRIVATE
