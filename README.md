@@ -1,63 +1,77 @@
 # Event Backtester
 
-An event-driven backtesting engine written in C++17, built around a limit order book, strategy interface, portfolio accounting, configurable execution latency, trading fees, and mark-to-market PnL.
+An event-driven backtesting engine written in C++17.
 
-The project simulates how trading strategies interact with a market through order events rather than directly modifying positions or prices.
+The project simulates a limit order book, processes historical market events, executes strategy-generated orders through the same matching engine, and tracks portfolio positions and PnL.
 
-## Features
+## Quick Start
 
-- Event-driven backtesting engine
-- Limit order book with price-time priority
+### Requirements
+
+- CMake 3.20+
+- A C++17-compatible compiler such as GCC or Clang
+
+### Clone
+
+```bash
+git clone https://github.com/Octa-pe-ghituri/Event-backtester.git
+cd Event-backtester
+```
+
+### Build
+
+```bash
+cmake -S . -B build
+cmake --build build
+```
+
+### Run
+
+From the project root:
+
+```bash
+./build/event_backtester
+```
+
+The current example runs the included fair-price strategy on the provided simulation dataset.
+
+---
+
+## What It Supports
+
+- Event-driven simulation
+- Limit order book
+- Price-time priority / FIFO within a price level
 - Limit orders
 - Market orders
 - IOC orders
 - Cancel and modify operations
-- Multi-symbol market support
-- Strategy interface for implementing custom strategies
+- Multiple symbols
+- Custom strategy interface
 - Configurable strategy latency
 - Portfolio and inventory tracking
 - Trading fees
-- Mark-to-market equity and PnL
+- Mark-to-market PnL
 - Deterministic event ordering
-- CMake build system
-- AddressSanitizer and UndefinedBehaviorSanitizer support
 
-## Architecture
+## How It Works
 
-The project is split into several independent components:
-
-- `Book` manages the limit order book and matching engine.
-- `EventQueue` processes market and strategy events in chronological order.
-- `Backtest` coordinates the simulation.
-- `Strategy` defines the interface used by trading strategies.
-- `FairPriceStrategy` implements the current trading strategy.
-- `Portfolio` tracks cash, positions, fees, and fills.
-- `IO` parses historical market events from files.
-
-A strategy does not directly modify the order book or portfolio.
-
-Instead, the flow is:
+The main flow is:
 
 ```text
 Historical Events
        |
        v
-   EventQueue
+   Event Queue
        |
        v
-      Book
-       |
-       v
- Top of Book
+   Order Book
        |
        v
     Strategy
        |
        v
- OrderCommand
-       |
-       v
-   EventQueue
+  Order Command
        |
        v
  Matching Engine
@@ -67,130 +81,15 @@ Historical Events
        |
        v
    Portfolio
-       |
-       v
- Equity / PnL
 ```
 
-## Fair Price Strategy
+The strategy only observes the current market and portfolio state.
 
-The current strategy uses top-of-book order imbalance to estimate a fair price.
+It does not directly modify the order book or position. Instead, it returns an `OrderCommand`, which is processed by the backtesting engine.
 
-The order book imbalance is:
+## Input Data
 
-```text
-imbalance =
-    (bestBidQuantity - bestAskQuantity)
-    /
-    (bestBidQuantity + bestAskQuantity)
-```
-
-The mid price is:
-
-```text
-mid =
-    (bestBid + bestAsk) / 2
-```
-
-The predicted fair price is:
-
-```text
-fairPrice =
-    mid
-    + bias
-    + imbalanceWeight * imbalance
-```
-
-The current model parameters are:
-
-```text
-bias = -0.482072524654
-imbalanceWeight = 8.509332824319
-```
-
-The strategy then calculates:
-
-```text
-buyEdge =
-    fairPrice - bestAsk
-
-sellEdge =
-    bestBid - fairPrice
-```
-
-Orders are only sent when the estimated edge is large enough.
-
-## Inventory-Aware Risk
-
-The strategy adjusts its required edge based on the current position.
-
-```text
-requiredBuyEdge =
-    baseEdge
-    + position * inventoryPenalty
-
-requiredSellEdge =
-    baseEdge
-    - position * inventoryPenalty
-```
-
-Current parameters:
-
-```text
-baseEdge = 6.0 ticks
-inventoryPenalty = 1.0
-maxPosition = 6
-```
-
-This means that as the strategy becomes more long, additional BUY orders become harder to justify.
-
-Similarly, as the strategy becomes more short, additional SELL orders require a larger edge.
-
-The strategy currently trades one unit at a time using marketable limit orders:
-
-```text
-BUY  1 @ bestAsk
-SELL 1 @ bestBid
-```
-
-## Limit Order Book
-
-Bid and ask price levels are stored using ordered maps.
-
-```text
-best bid -> highest bid price
-best ask -> lowest ask price
-```
-
-Orders at the same price level are stored in FIFO order using linked nodes.
-
-The engine also keeps an order ID lookup table, allowing orders to be located efficiently for cancellation and modification.
-
-The matching engine supports:
-
-```text
-ADD
-CANCEL
-MODIFY
-IOC
-MARKET
-```
-
-## Multi-Symbol Support
-
-The backtester stores a separate order book for each symbol:
-
-```cpp
-std::map<Symbol, Book>
-```
-
-Historical input therefore includes the symbol of every event.
-
-The current example strategy trades only `AAPL`, but the backtesting engine itself supports multiple symbols.
-
-## Input Format
-
-Historical market events use the following format:
+Historical events use the following format:
 
 ```text
 time SYMBOL TYPE order_id owner_id SIDE quantity price
@@ -222,83 +121,85 @@ BUY
 SELL
 ```
 
-## Event Ordering
-
-Events are processed in chronological order.
-
-When multiple events have the same timestamp, insertion order is used as a deterministic tie-breaker.
-
-This makes repeated backtests reproducible.
-
-Strategy orders can also be assigned a configurable latency before they become active in the market.
-
-## Portfolio Accounting
-
-The portfolio is updated only when strategy orders receive:
+The fields are:
 
 ```text
-OrderFilled
-OrderPartialFilled
+time       simulation timestamp
+SYMBOL     instrument identifier
+TYPE       order event type
+order_id   order identifier
+owner_id   participant identifier
+SIDE       BUY or SELL
+quantity   order quantity
+price      integer price in ticks
 ```
 
-For a BUY:
+## Running Another Dataset
 
-```text
-cash -= quantity * price
-cash -= fee
-position += quantity
+The dataset used by the backtest is currently configured in `main.cpp`.
+
+Example:
+
+```cpp
+Backtest backtest(
+    "data/lesson07_simulation_events_adapted.txt",
+    std::move(strategy),
+    359,
+    0,
+    1,
+    0.05
+);
 ```
 
-For a SELL:
+The arguments are:
 
 ```text
-cash += quantity * price
-cash -= fee
-position -= quantity
+events file
+strategy
+maximum simulation time
+strategy latency
+strategy owner ID
+fee per executed unit
 ```
 
-Trading fees are calculated as:
+To use another dataset, change the file path and simulation parameters in `main.cpp`, then rebuild:
 
-```text
-fee =
-    feeTicks * tradedQuantity
+```bash
+cmake --build build
+./build/event_backtester
 ```
 
-## Mark-to-Market PnL
+## Fair Price Strategy
 
-Cash alone is not enough to measure performance when an open position remains.
-
-The backtester therefore calculates:
+The included strategy estimates fair value using top-of-book imbalance.
 
 ```text
-equity =
-    cash
-    + position * mark
-```
+imbalance =
+    (bidQuantity - askQuantity)
+    /
+    (bidQuantity + askQuantity)
 
-The current mark is the mid price:
-
-```text
-mark =
+mid =
     (bestBid + bestAsk) / 2
+
+fairPrice =
+    mid + bias + imbalanceWeight * imbalance
 ```
 
-For multiple symbols, the value of each position is added to the portfolio equity.
-
-## Lesson 7 Validation
-
-The current implementation was validated using an adapted Lesson 7 simulation dataset.
-
-Configuration:
+It then compares fair value with the current best bid and ask.
 
 ```text
-symbol = AAPL
-strategy latency = 0
-fee = 0.05 ticks per executed unit
-max position = 6
+buyEdge  = fairPrice - bestAsk
+sellEdge = bestBid - fairPrice
 ```
 
-Result:
+The required edge also depends on the current inventory, making it harder to keep increasing an already large position.
+
+The current strategy trades one unit at a time using marketable limit orders.
+
+## Validation
+
+The included simulation scenario currently produces:
 
 ```text
 strategy fills = 18
@@ -308,7 +209,14 @@ trading fees = 0.90 ticks
 final PnL = 299.10 ticks
 ```
 
-This reproduces the reference result for the strategy while running through the project's own event queue, matching engine, portfolio, and strategy architecture.
+Configuration:
+
+```text
+symbol = AAPL
+strategy latency = 0
+fee = 0.05 ticks per executed unit
+max position = 6
+```
 
 ## Project Structure
 
@@ -340,83 +248,49 @@ Event-backtester/
     └── portfolio.cpp
 ```
 
-## Building
+## Adding Another Strategy
 
-Requirements:
+New strategies can inherit from the `Strategy` interface and implement:
 
-- CMake 3.20+
-- C++17 compatible compiler
-
-Configure the project:
-
-```bash
-cmake -S . -B build
+```cpp
+std::optional<OrderCommand> onTimeMove(
+    int now,
+    const std::map<Symbol, Book> &books,
+    const Portfolio &portfolio,
+    const std::vector<StrategyEvent> &recentEvents
+);
 ```
 
-Build:
-
-```bash
-cmake --build build
-```
-
-Run:
-
-```bash
-./build/event_backtester
-```
+The new strategy can then be instantiated in `main.cpp` and passed to `Backtest`.
 
 ## Sanitizers
 
-The project optionally supports AddressSanitizer and UndefinedBehaviorSanitizer when using GCC or Clang.
-
-Configure:
+The project supports AddressSanitizer and UndefinedBehaviorSanitizer with GCC or Clang.
 
 ```bash
 cmake -S . -B build-asan \
     -DCMAKE_BUILD_TYPE=Debug \
     -DENABLE_SANITIZERS=ON
-```
 
-Build:
-
-```bash
 cmake --build build-asan
-```
-
-Run:
-
-```bash
 ./build-asan/event_backtester
-```
-
-## Compiler Warnings
-
-For GCC and Clang, the project enables:
-
-```text
--Wall
--Wextra
--Wpedantic
--Wshadow
 ```
 
 ## Current Limitations
 
 The project is still under development.
 
-Some areas planned for future improvement include:
+Planned improvements include:
 
-- automated unit and integration tests
+- automated tests
 - pending-order-aware risk limits
-- cached quantity at each order book level
 - richer performance statistics
-- trade history and equity curve output
-- additional strategy implementations
-- more realistic latency and execution models
-- improved configuration handling
+- additional strategies
+- improved runtime configuration
+- more realistic execution and latency models
 
 ## Purpose
 
-This project is being developed as an educational and experimental implementation of an event-driven trading backtester and limit order book in modern C++.
+This project is an educational and experimental implementation of an event-driven trading backtester and limit order book.
 
-The goal is to better understand market microstructure, order matching, execution, strategy design, inventory risk, and backtesting architecture.
+The main goal is to better understand order matching, market microstructure, execution, inventory risk, and backtesting architecture.
