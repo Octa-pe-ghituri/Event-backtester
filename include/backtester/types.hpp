@@ -9,62 +9,62 @@ enum class Side { Buy, Sell };
 enum class OrderType { Add, Cancel, Mod, Market, IOC };
 
 enum class ResponseEvents {
-  OrderAccepted,
-  OrderRejected,
+    OrderAccepted,
+    OrderRejected,
 
-  OrderFilled,
-  OrderPartialFilled,
+    OrderFilled,
+    OrderPartialFilled,
 
-  OrderCancelled,
-  OrderCancelFailed,
+    OrderCancelled,
+    OrderCancelFailed,
 
-  OrderModified,
-  OrderModifyFailed,
+    OrderModified,
+    OrderModifyFailed,
 
-  OrderExpired
+    OrderExpired
 };
 
 struct Order {
-  int order_id = 0;
-  int owner_id = 0;
+        int order_id = 0;
+        int owner_id = 0;
 
-  Side side = Side::Buy;
+        Side side = Side::Buy;
 
-  int quantity = 0;
-  int price = 0;
+        int quantity = 0;
+        int price = 0;
 
-  int time = 0;
+        int time = 0;
 };
 
 struct BackTestEvent {
-  Symbol symbol;
+        Symbol symbol;
 
-  Side side = Side::Buy;
-  OrderType order_type = OrderType::Add;
+        Side side = Side::Buy;
+        OrderType order_type = OrderType::Add;
 
-  int order_id = 0;
-  int owner_id = 0;
+        int order_id = 0;
+        int owner_id = 0;
 
-  int quantity = 0;
-  int price = 0;
+        int quantity = 0;
+        int price = 0;
 
-  int time = 0;
+        int time = 0;
 };
 
 struct OrderEvent {
-  Side side = Side::Buy;
-  ResponseEvents type = ResponseEvents::OrderAccepted;
+        Side side = Side::Buy;
+        ResponseEvents type = ResponseEvents::OrderAccepted;
 
-  int order_id = 0;
-  int owner_id = 0;
+        int order_id = 0;
+        int owner_id = 0;
 
-  int quantity = 0;
-  int price = 0;
+        int quantity = 0;
+        int price = 0;
 
-  int time = 0;
+        int time = 0;
 };
 
 struct StrategyEvent {
-  Symbol symbol;
-  OrderEvent event;
+        Symbol symbol;
+        OrderEvent event;
 };
