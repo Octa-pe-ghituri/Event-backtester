@@ -6,21 +6,21 @@
 
 class Portfolio {
 
-public:
-  explicit Portfolio(double feeTicks = 0.0);
+    public:
+        explicit Portfolio(double feeTicks = 0.0);
 
-  void apply(const StrategyEvent &event);
+        void apply(const StrategyEvent &event);
 
-  double cash() const;
+        double cash() const;
 
-  long long position(const Symbol &symbol) const;
+        long long position(const Symbol &symbol) const;
 
-  const std::map<Symbol, long long> &positions() const;
+        const std::map<Symbol, long long> &positions() const;
 
-private:
-  double feeTicks_{0.0};
+    private:
+        double feeTicks_{0.0};
 
-  double cash_{0.0};
+        double cash_{0.0};
 
-  std::map<Symbol, long long> positions_;
+        std::map<Symbol, long long> positions_;
 };
