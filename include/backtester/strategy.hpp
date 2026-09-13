@@ -3,6 +3,7 @@
 #include "backtester/book.hpp"
 #include "backtester/portfolio.hpp"
 #include "backtester/types.hpp"
+#include "backtester/market_analytics.hpp"
 
 #include <map>
 #include <optional>
@@ -29,6 +30,7 @@ class Strategy {
         virtual ~Strategy() = default;
 
         virtual std::optional<OrderCommand> onTimeMove(int now, const std::map<Symbol, Book> &books,
+                                                       const std::map<Symbol, MarketAnalytics> &analytics,
                                                        const Portfolio &portfolio,
                                                        const std::vector<StrategyEvent> &recentEvents) = 0;
 };
@@ -36,11 +38,14 @@ class Strategy {
 class DoNothingStrategy : public Strategy {
 
     public:
-        std::optional<OrderCommand> onTimeMove(int now, const std::map<Symbol, Book> &books, const Portfolio &portfolio,
+        std::optional<OrderCommand> onTimeMove(int now, const std::map<Symbol, Book> &books,
+                                               const std::map<Symbol, MarketAnalytics> &analytics,
+                                               const Portfolio &portfolio,
                                                const std::vector<StrategyEvent> &recentEvents) override {
 
             (void)now;
             (void)books;
+            (void)analytics;
             (void)portfolio;
             (void)recentEvents;
 
