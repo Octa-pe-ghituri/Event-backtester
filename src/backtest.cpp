@@ -6,8 +6,10 @@
 #include <iostream>
 #include <optional>
 #include <stdexcept>
+#include <unordered_set>
 #include <utility>
 #include <vector>
+#include <set>
 
 Backtest::Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy, int maxTime, int strategyLatency,
                    int strategyOwnerId, double feeTicks)
@@ -129,12 +131,13 @@ void Backtest::processEvent(const BackTestEvent &event) {
 
     std::vector<OrderEvent> responses = book.ProcessOrder(event);
 
+    std::unordered_set<int>level_change_bids,level_change_asks;
+
     for (const OrderEvent &response : responses) {
         std::cout << "t=" << now_ << " symbol=" << event.symbol << " order=" << response.order_id
                   << " owner=" << response.owner_id << " event=" << static_cast<int>(response.type)
                   << " qty=" << response.quantity << " price=" << response.price << "\n";
 
-        // luat de la Vlad
         if (response.owner_id == strategyOwnerId_) {
             StrategyEvent strategyEvent{event.symbol, response};
 
@@ -142,7 +145,24 @@ void Backtest::processEvent(const BackTestEvent &event) {
 
             portfolio_.apply(strategyEvent);
         }
+
+        if(response.type == ResponseEvents::OrderCancelled ||
+            response.type == ResponseEvents::OrderModified ||
+            response.type == ResponseEvents::OrderModifyAccepted ||
+            response.type == ResponseEvents::OrderFilled ||
+            response.type == ResponseEvents::OrderPartialFilled){
+
+            if(response.side == Side::Buy){
+                level_change_bids.insert(response.price);
+            }
+            else{
+                level_change_asks.insert(response.price);
+            }
+        }
     }
+
+    ///from here we must update the Analytics Engine with level_change
+
 }
 
 void Backtest::scheduleCommand(const OrderCommand &command) {

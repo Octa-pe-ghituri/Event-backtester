@@ -34,7 +34,6 @@ class Backtest {
 
         void scheduleCommand(const OrderCommand &command);
 
-        // luat de la Vlad
         int now_{0};
 
         int maxTime_{0};
@@ -45,14 +44,11 @@ class Backtest {
 
         std::map<Symbol, Book> books_;
 
-        // luat de la Vlad
         Portfolio portfolio_;
 
         EventQueue<BackTestEvent> eventQueue_;
 
-        // luat de la Vlad
         std::vector<StrategyEvent> strategyEventsThisTick_;
 
-        // luat de la Vlad
         std::unique_ptr<Strategy> strategy_;
 };

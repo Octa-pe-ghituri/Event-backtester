@@ -1,4 +1,5 @@
 #include "backtester/book.hpp"
+#include "backtester/types.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -158,7 +159,9 @@ std::vector<OrderEvent> Book::ProcessMod(const BackTestEvent &Event) {
     }
 
     std::vector<OrderEvent> responses = {{removed->side, ResponseEvents::OrderModified, removed->order_id,
-                                          removed->owner_id, Event.quantity, Event.price, Event.time}};
+                                          removed->owner_id, removed->quantity, removed->price, Event.time}};
+
+    responses.push_back({Event.side,ResponseEvents::OrderModifyAccepted,Event.order_id,Event.owner_id,Event.quantity,Event.price,Event.time});
 
     Order order_data = {removed->order_id, removed->owner_id, removed->side, Event.quantity, Event.price, Event.time};
 
