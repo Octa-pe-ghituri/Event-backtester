@@ -2,6 +2,7 @@
 
 #include "backtester/types.hpp"
 
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <unordered_map>
@@ -30,6 +31,8 @@ class Book {
         Book &operator=(Book &&) = delete;
 
         std::optional<TopOfBook> topOfBook() const;
+
+        std::int64_t quantityAtPrice(Side side, int price) const;
 
         std::vector<OrderEvent> ProcessOrder(const BackTestEvent &Event);
 
@@ -60,6 +63,8 @@ class Book {
 
                 LevelNode *first;
                 LevelNode *last;
+
+                std::int64_t total_quantity;
         };
 
         void clearLevels(std::map<int, Location_Rest> &levels);

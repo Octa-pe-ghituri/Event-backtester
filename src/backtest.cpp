@@ -9,7 +9,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <set>
 
 Backtest::Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy, int maxTime, int strategyLatency,
                    int strategyOwnerId, double feeTicks)
@@ -118,6 +117,10 @@ const std::map<Symbol, Book> &Backtest::books() const {
     return books_;
 }
 
+const std::map<Symbol, MarketAnalytics> &Backtest::analytics() const {
+    return analytics_;
+}
+
 void Backtest::processEvent(const BackTestEvent &event) {
     // Daca symbol-ul nu exista:
     //
@@ -129,9 +132,11 @@ void Backtest::processEvent(const BackTestEvent &event) {
     // il foloseste pe cel existent.
     Book &book = books_[event.symbol];
 
+    MarketAnalytics &analytics = analytics_[event.symbol];
+
     std::vector<OrderEvent> responses = book.ProcessOrder(event);
 
-    std::unordered_set<int>level_change_bids,level_change_asks;
+    std::unordered_set<int> level_change_bids, level_change_asks;
 
     for (const OrderEvent &response : responses) {
         std::cout << "t=" << now_ << " symbol=" << event.symbol << " order=" << response.order_id
@@ -146,23 +151,26 @@ void Backtest::processEvent(const BackTestEvent &event) {
             portfolio_.apply(strategyEvent);
         }
 
-        if(response.type == ResponseEvents::OrderCancelled ||
-            response.type == ResponseEvents::OrderModified ||
-            response.type == ResponseEvents::OrderModifyAccepted ||
-            response.type == ResponseEvents::OrderFilled ||
-            response.type == ResponseEvents::OrderPartialFilled){
+        if (response.type == ResponseEvents::OrderCancelled || response.type == ResponseEvents::OrderModified ||
+            response.type == ResponseEvents::OrderModifyAccepted || response.type == ResponseEvents::OrderFilled ||
+            response.type == ResponseEvents::OrderPartialFilled ||
+            (response.type == ResponseEvents::OrderAccepted && event.order_type == OrderType::Add)) {
 
-            if(response.side == Side::Buy){
+            if (response.side == Side::Buy) {
                 level_change_bids.insert(response.price);
-            }
-            else{
+            } else {
                 level_change_asks.insert(response.price);
             }
         }
     }
 
-    ///from here we must update the Analytics Engine with level_change
+    for (const int price : level_change_bids) {
+        analytics.setLevel(Side::Buy, price, book.quantityAtPrice(Side::Buy, price));
+    }
 
+    for (const int price : level_change_asks) {
+        analytics.setLevel(Side::Sell, price, book.quantityAtPrice(Side::Sell, price));
+    }
 }
 
 void Backtest::scheduleCommand(const OrderCommand &command) {

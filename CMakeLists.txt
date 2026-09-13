@@ -15,6 +15,7 @@ add_executable(event_backtester
     src/io.cpp
     src/portfolio.cpp
     src/fair_price_strategy.cpp
+    src/price_level_treap.cpp
 )
 
 target_include_directories(event_backtester PRIVATE

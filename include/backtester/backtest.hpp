@@ -2,6 +2,7 @@
 
 #include "backtester/book.hpp"
 #include "backtester/event_queue.hpp"
+#include "backtester/market_analytics.hpp"
 #include "backtester/portfolio.hpp"
 #include "backtester/strategy.hpp"
 #include "backtester/types.hpp"
@@ -25,6 +26,8 @@ class Backtest {
         // book-urile din Strategy/tester.
         const std::map<Symbol, Book> &books() const;
 
+        const std::map<Symbol, MarketAnalytics> &analytics() const;
+
     private:
         int nextStrategyOrderId_{1000000};
 
@@ -43,6 +46,8 @@ class Backtest {
         int strategyOwnerId_{1};
 
         std::map<Symbol, Book> books_;
+
+        std::map<Symbol, MarketAnalytics> analytics_;
 
         Portfolio portfolio_;
 
