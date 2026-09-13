@@ -52,7 +52,8 @@ void Backtest::run() {
     while (now_ <= maxTime_) {
         processDueEvents();
 
-        std::optional<OrderCommand> command = strategy_->onTimeMove(now_, books_, portfolio_, strategyEventsThisTick_);
+        std::optional<OrderCommand> command =
+            strategy_->onTimeMove(now_, books_, analytics_, portfolio_, strategyEventsThisTick_);
 
         // Strategy tocmai a consumat evenimentele primite.
         strategyEventsThisTick_.clear();

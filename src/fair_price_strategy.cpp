@@ -3,10 +3,12 @@
 FairPriceStrategy::FairPriceStrategy(FairPriceStrategyConfig config) : config_(config) {}
 
 std::optional<OrderCommand> FairPriceStrategy::onTimeMove(int now, const std::map<Symbol, Book> &books,
+                                                          const std::map<Symbol, MarketAnalytics> &analytics,
                                                           const Portfolio &portfolio,
                                                           const std::vector<StrategyEvent> &recentEvents) {
 
     (void)now;
+    (void)analytics;
     (void)recentEvents;
 
     auto bookIt = books.find(config_.symbol);

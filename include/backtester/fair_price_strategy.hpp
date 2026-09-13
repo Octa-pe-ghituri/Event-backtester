@@ -22,7 +22,9 @@ class FairPriceStrategy : public Strategy {
     public:
         explicit FairPriceStrategy(FairPriceStrategyConfig config);
 
-        std::optional<OrderCommand> onTimeMove(int now, const std::map<Symbol, Book> &books, const Portfolio &portfolio,
+        std::optional<OrderCommand> onTimeMove(int now, const std::map<Symbol, Book> &books,
+                                               const std::map<Symbol, MarketAnalytics> &analytics,
+                                               const Portfolio &portfolio,
                                                const std::vector<StrategyEvent> &recentEvents) override;
 
     private:
