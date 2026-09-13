@@ -1,7 +1,14 @@
 #include "backtester/backtest.hpp"
+#include "backtester/config.hpp"
 #include "backtester/fair_price_strategy.hpp"
 
-int main() {
+#include <string>
+
+int main(int argc, char *argv[]) {
+
+    const std::string configPath = argc > 1 ? argv[1] : "config/backtest.cfg";
+
+    const BacktestConfig backtestConfig = LoadBacktestConfigFromFile(configPath);
 
     FairPriceStrategyConfig strategyConfig{"AAPL", -0.482072524654, 8.509332824319, 6.0, 1.0, 6};
 
@@ -13,11 +20,7 @@ int main() {
 
         std::move(strategy),
 
-        359,
-
-        0,
-
-        1, 0.05);
+        backtestConfig);
 
     backtest.run();
 
