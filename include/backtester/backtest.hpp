@@ -2,6 +2,7 @@
 
 #include "backtester/book.hpp"
 #include "backtester/event_queue.hpp"
+#include "backtester/market_analytics.hpp"
 #include "backtester/portfolio.hpp"
 #include "backtester/strategy.hpp"
 #include "backtester/types.hpp"
@@ -25,6 +26,8 @@ class Backtest {
         // book-urile din Strategy/tester.
         const std::map<Symbol, Book> &books() const;
 
+        const std::map<Symbol, MarketAnalytics> &analytics() const;
+
     private:
         int nextStrategyOrderId_{1000000};
 
@@ -34,7 +37,6 @@ class Backtest {
 
         void scheduleCommand(const OrderCommand &command);
 
-        // luat de la Vlad
         int now_{0};
 
         int maxTime_{0};
@@ -45,14 +47,13 @@ class Backtest {
 
         std::map<Symbol, Book> books_;
 
-        // luat de la Vlad
+        std::map<Symbol, MarketAnalytics> analytics_;
+
         Portfolio portfolio_;
 
         EventQueue<BackTestEvent> eventQueue_;
 
-        // luat de la Vlad
         std::vector<StrategyEvent> strategyEventsThisTick_;
 
-        // luat de la Vlad
         std::unique_ptr<Strategy> strategy_;
 };

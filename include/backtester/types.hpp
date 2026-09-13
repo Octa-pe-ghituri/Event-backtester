@@ -20,6 +20,7 @@ enum class ResponseEvents {
 
     OrderModified,
     OrderModifyFailed,
+    OrderModifyAccepted,
 
     OrderExpired
 };

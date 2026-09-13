@@ -1,4 +1,5 @@
 #include "backtester/book.hpp"
+#include "backtester/types.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -42,9 +43,9 @@ std::optional<TopOfBook> Book::topOfBook() const {
     auto bestBidIt = bids.rbegin();
     auto bestAskIt = asks.begin();
 
-    long long bestBidQuantity = levelQuantity(bestBidIt->second.first);
+    long long bestBidQuantity = bestBidIt->second.total_quantity;
 
-    long long bestAskQuantity = levelQuantity(bestAskIt->second.first);
+    long long bestAskQuantity = bestAskIt->second.total_quantity;
 
     if (bestBidQuantity <= 0 || bestAskQuantity <= 0) {
 
@@ -52,6 +53,18 @@ std::optional<TopOfBook> Book::topOfBook() const {
     }
 
     return TopOfBook{bestBidIt->first, bestBidQuantity, bestAskIt->first, bestAskQuantity};
+}
+
+std::int64_t Book::quantityAtPrice(const Side side, const int price) const {
+    const std::map<int, Location_Rest> &levels = side == Side::Buy ? bids : asks;
+
+    const auto levelIt = levels.find(price);
+
+    if (levelIt == levels.end()) {
+        return 0;
+    }
+
+    return levelIt->second.total_quantity;
 }
 
 long long Book::levelQuantity(LevelNode *first) const {
@@ -158,7 +171,10 @@ std::vector<OrderEvent> Book::ProcessMod(const BackTestEvent &Event) {
     }
 
     std::vector<OrderEvent> responses = {{removed->side, ResponseEvents::OrderModified, removed->order_id,
-                                          removed->owner_id, Event.quantity, Event.price, Event.time}};
+                                          removed->owner_id, removed->quantity, removed->price, Event.time}};
+
+    responses.push_back({Event.side, ResponseEvents::OrderModifyAccepted, Event.order_id, Event.owner_id,
+                         Event.quantity, Event.price, Event.time});
 
     Order order_data = {removed->order_id, removed->owner_id, removed->side, Event.quantity, Event.price, Event.time};
 
@@ -254,6 +270,8 @@ void Book::marketBuy(Order &order, std::vector<OrderEvent> &responses, const int
             order.quantity -= delta;
             it->quantity -= delta;
 
+            asks.begin()->second.total_quantity -= delta;
+
             responses.push_back(Fill(order.order_id, order.owner_id, order.side, order.quantity, delta, price, time));
 
             responses.push_back(Fill(it->order_id, it->owner_id, Side::Sell, it->quantity, delta, price, time));
@@ -300,6 +318,8 @@ void Book::marketSell(Order &order, std::vector<OrderEvent> &responses, const in
 
             order.quantity -= delta;
             it->quantity -= delta;
+
+            bids.rbegin()->second.total_quantity -= delta;
 
             responses.push_back(Fill(order.order_id, order.owner_id, order.side, order.quantity, delta, price, time));
 
@@ -382,6 +402,8 @@ std::optional<Order> Book::removeFromSide(std::map<int, Location_Rest> &Level, c
     // Save everything BEFORE deleting the node.
     Order removed = {node->order_id, node->owner_id, side, node->quantity, price, 0};
 
+    levelIt->second.total_quantity -= node->quantity;
+
     // Remove node from doubly linked list.
 
     if (node->prev != NULL)
@@ -433,7 +455,7 @@ void Book::init_level(const Order &order, std::map<int, Location_Rest> &Levels) 
 
     LevelNode *location_Ptr = new LevelNode{NULL, NULL, order.order_id, order.owner_id, order.quantity};
 
-    Levels.emplace(order.price, Location_Rest{location_Ptr, location_Ptr});
+    Levels.emplace(order.price, Location_Rest{location_Ptr, location_Ptr, order.quantity});
 
     location.emplace(order.order_id, Location_ID{location_Ptr, order.side, order.owner_id, order.price});
 }
@@ -446,6 +468,8 @@ void Book::add_order(const Order &order, std::map<int, Location_Rest> &Levels) {
     Levels[order.price].last->nxt = location_Ptr;
 
     Levels[order.price].last = location_Ptr;
+
+    Levels[order.price].total_quantity += order.quantity;
 
     location.emplace(order.order_id, Location_ID{location_Ptr, order.side, order.owner_id, order.price});
 }
@@ -464,6 +488,8 @@ void Book::matchBuy(Order &order, std::vector<OrderEvent> &responses, const int 
 
             order.quantity -= delta;
             it->quantity -= delta;
+
+            asks.begin()->second.total_quantity -= delta;
 
             responses.push_back(Fill(order.order_id, order.owner_id, order.side, order.quantity, delta, price, time));
 
@@ -511,6 +537,8 @@ void Book::matchSell(Order &order, std::vector<OrderEvent> &responses, const int
 
             order.quantity -= delta;
             it->quantity -= delta;
+
+            bids.rbegin()->second.total_quantity -= delta;
 
             responses.push_back(Fill(order.order_id, order.owner_id, order.side, order.quantity, delta, price, time));
 
