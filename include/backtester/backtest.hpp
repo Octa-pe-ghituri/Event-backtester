@@ -1,6 +1,7 @@
 #pragma once
 
 #include "backtester/book.hpp"
+#include "backtester/config.hpp"
 #include "backtester/event_queue.hpp"
 #include "backtester/market_analytics.hpp"
 #include "backtester/portfolio.hpp"
@@ -15,8 +16,7 @@
 class Backtest {
 
     public:
-        Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy, int maxTime, int strategyLatency,
-                 int strategyOwnerId, double feeTicks = 0.0);
+        Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy, const BacktestConfig &config);
 
         void run();
 

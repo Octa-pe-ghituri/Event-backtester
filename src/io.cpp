@@ -3,7 +3,6 @@
 #include <fstream>
 #include <stdexcept>
 
-// luat de la Vlad - echivalentul parseEventType.
 // Adaptat la OrderType-ul meu.
 OrderType ParseOrderType(const std::string &value) {
 
@@ -25,7 +24,6 @@ OrderType ParseOrderType(const std::string &value) {
     throw std::invalid_argument("unknown order type: " + value);
 }
 
-// luat de la Vlad
 Side ParseSide(const std::string &value) {
 
     if (value == "BUY")
@@ -37,7 +35,6 @@ Side ParseSide(const std::string &value) {
     throw std::invalid_argument("unknown side: " + value);
 }
 
-// luat de la Vlad - loadEventsFromFile.
 // Adaptat pentru multiple simboluri.
 //
 // FORMAT FISIER:

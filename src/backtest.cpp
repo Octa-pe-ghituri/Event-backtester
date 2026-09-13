@@ -4,16 +4,44 @@
 #include "backtester/types.hpp"
 
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-Backtest::Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy, int maxTime, int strategyLatency,
-                   int strategyOwnerId, double feeTicks)
-    : maxTime_(maxTime), strategyLatency_(strategyLatency), strategyOwnerId_(strategyOwnerId), portfolio_(feeTicks),
-      strategy_(std::move(strategy)) {
+namespace {
+
+int TotalLatencyTicks(const LatencyConfig &latency) {
+    if (latency.marketCommunicationLatencyTicks < 0) {
+        throw std::invalid_argument("marketCommunicationLatencyTicks must not be negative");
+    }
+
+    if (latency.predictionGenerationLatencyTicks < 0) {
+        throw std::invalid_argument("predictionGenerationLatencyTicks must not be negative");
+    }
+
+    if (latency.predictionTransferLatencyTicks < 0) {
+        throw std::invalid_argument("predictionTransferLatencyTicks must not be negative");
+    }
+
+    const long long total = static_cast<long long>(latency.marketCommunicationLatencyTicks) +
+                            static_cast<long long>(latency.predictionGenerationLatencyTicks) +
+                            static_cast<long long>(latency.predictionTransferLatencyTicks);
+
+    if (total > std::numeric_limits<int>::max()) {
+        throw std::invalid_argument("total latency is too large");
+    }
+
+    return static_cast<int>(total);
+}
+
+} // namespace
+
+Backtest::Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy, const BacktestConfig &config)
+    : maxTime_(config.maxTime), strategyLatency_(TotalLatencyTicks(config.latency)),
+      strategyOwnerId_(config.strategyOwnerId), portfolio_(config.feeTicks), strategy_(std::move(strategy)) {
 
     if (strategy_ == nullptr) {
         throw std::invalid_argument("strategy must not be null");
@@ -23,8 +51,9 @@ Backtest::Backtest(std::string eventsPath, std::unique_ptr<Strategy> strategy, i
         throw std::invalid_argument("maxTime must not be negative");
     }
 
-    if (strategyLatency_ < 0) {
-        throw std::invalid_argument("strategyLatency must not be negative");
+    if (maxTime_ == std::numeric_limits<int>::max() ||
+        strategyLatency_ > std::numeric_limits<int>::max() - maxTime_) {
+        throw std::invalid_argument("maxTime plus total latency is too large");
     }
 
     if (strategyOwnerId_ < 0) {

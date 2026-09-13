@@ -12,6 +12,7 @@ add_executable(event_backtester
     main.cpp
     src/backtest.cpp
     src/book.cpp
+    src/config.cpp
     src/io.cpp
     src/portfolio.cpp
     src/fair_price_strategy.cpp
